@@ -1,11 +1,14 @@
+import pandas as pd
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import numpy as np
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output
 
 import data_load
+import ml_methods
 
 app = dash.Dash(__name__)
 
@@ -52,22 +55,48 @@ app.layout = html.Div([
      Input('macro-var-3', 'value')]
 )
 def update_macroeconomic_plots(selected_variable1, selected_variable2, selected_variable3):
-    # Implement this callback to update the 2x2 subplot and correlation matrix plots
-    # Use selected_variable1, selected_variable2, and selected_variable3 in the API call and plotting logic
-    # Return the Plotly figure for the 2x2 subplot and correlation matrix
-    return 0
+    df1 = data_load.load_macro_data(selected_variable1)
+    df2 = data_load.load_macro_data(selected_variable2)
+    df3 = data_load.load_macro_data(selected_variable3)
+    fig = make_subplots(rows=2, cols=2, subplot_titles=[selected_variable1, selected_variable2, selected_variable3, 'Correlation Heatmap'])
+    fig.add_trace(go.Scatter(x=df1.index, y=df1['value'], mode='lines', name=selected_variable1), row=1, col=1)
+    fig.add_trace(go.Scatter(x=df2.index, y=df2['value'], mode='lines', name=selected_variable2), row=1, col=2)
+    fig.add_trace(go.Scatter(x=df3.index, y=df3['value'], mode='lines', name=selected_variable3), row=2, col=1)
+    correlation_matrix = pd.concat([df1['value'], df2['value'], df3['value']], axis=1).corr()
+    print(correlation_matrix)
+    fig.add_trace(go.Heatmap(z=correlation_matrix.values,
+                             x=correlation_matrix.columns,
+                             y=correlation_matrix.columns,
+                             colorscale='Viridis',
+                             colorbar=dict(title='Correlation'),
+                             zmin=-1, zmax=1),
+                  row=2, col=2)
+    fig.update_layout(title_text='Macro Variables Analysis', showlegend=False)
+    return fig
 
 @app.callback(
     Output('commodity-plot', 'figure'),
     [Input('commodity-dropdown', 'value')]
 )
 def update_commodity_plot(selected_commodity):
-    # Implement this callback to update the commodity plot based on the selected commodity
-    # Use selected_commodity in the API call and plotting logic
-    # Return the Plotly figure for the commodity plot
-    return 0
+    df = data_load.load_target_data(selected_commodity)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index, y=df['value'], mode='lines', name=selected_commodity))
+    fig.update_layout(title_text='Time Series Plot', xaxis_title='Date', yaxis_title='Price')
+    return fig
 
 # Implement other callbacks as needed
+@app.callback(
+    Output('commodity-plot', 'figure'),
+    [Input('commodity-dropdown', 'value')]
+)
+def update_commodity_plot(selected_commodity):
+    df = data_load.load_target_data(selected_commodity)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=df.index, y=df['value'], mode='lines', name=selected_commodity))
+    fig.update_layout(title_text='Time Series Plot', xaxis_title='Date', yaxis_title='Price')
+    return fig
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
