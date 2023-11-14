@@ -10,19 +10,19 @@ import data_load
 app = dash.Dash(__name__)
 
 # Sample data and options (replace these with actual data and options from Alpha Vantage API)
-macroeconomic_variables = ['Variable 1', 'Variable 2', 'Variable 3']
-commodities = ['Commodity 1', 'Commodity 2', 'Commodity 3']
-regression_techniques = ['Linear Regression', 'Random Forest', 'Regression 3']
+macroeconomic_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durables', 'Unemployment', 'Nonfarm Payroll']
+commodities = ['Crude Oil WTI', 'Crude Oil Brent', 'Natural Gas', 'Copper', 'Aluminum', 'Wheat', 'Corn', 'Cotton', 'Sugar', 'Coffee', 'CMI']
+regression_techniques = ['Linear Regression', 'Random Forest', 'SVM']
 
 # Define layout
 app.layout = html.Div([
     # Top left section
     html.Div([
-        dcc.Dropdown(id='variable1-dropdown', options=[{'label': var, 'value': var} for var in macroeconomic_variables],
+        dcc.Dropdown(id='macro-var-1', options=[{'label': var, 'value': var} for var in macroeconomic_variables],
                      value='Variable 1', clearable=False),
-        dcc.Dropdown(id='variable2-dropdown', options=[{'label': var, 'value': var} for var in macroeconomic_variables],
+        dcc.Dropdown(id='macro-var-2', options=[{'label': var, 'value': var} for var in macroeconomic_variables],
                      value='Variable 2', clearable=False),
-        dcc.Dropdown(id='variable3-dropdown', options=[{'label': var, 'value': var} for var in macroeconomic_variables],
+        dcc.Dropdown(id='macro-var-3', options=[{'label': var, 'value': var} for var in macroeconomic_variables],
                      value='Variable 3', clearable=False),
         dcc.Graph(id='macroeconomic-plots')
     ], className='four columns'),
@@ -47,9 +47,9 @@ app.layout = html.Div([
 # Define callbacks (you need to implement these callbacks)
 @app.callback(
     Output('macroeconomic-plots', 'figure'),
-    [Input('variable1-dropdown', 'value'),
-     Input('variable2-dropdown', 'value'),
-     Input('variable3-dropdown', 'value')]
+    [Input('macro-var-1', 'value'),
+     Input('macro-var-2', 'value'),
+     Input('macro-var-3', 'value')]
 )
 def update_macroeconomic_plots(selected_variable1, selected_variable2, selected_variable3):
     # Implement this callback to update the 2x2 subplot and correlation matrix plots
