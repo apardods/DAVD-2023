@@ -11,7 +11,8 @@ import data_load
 import ml_methods
 
 app = dash.Dash(__name__)
-
+df = pd.DataFrame()
+selected_commodity = ""
 # Sample data and options (replace these with actual data and options from Alpha Vantage API)
 macroeconomic_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durables', 'Unemployment', 'Nonfarm Payroll']
 commodities = ['Crude Oil WTI', 'Crude Oil Brent', 'Natural Gas', 'Copper', 'Aluminum', 'Wheat', 'Corn', 'Cotton', 'Sugar', 'Coffee', 'CMI']
@@ -40,7 +41,9 @@ app.layout = html.Div([
     # Bottom left section
     html.Div([
         dcc.Dropdown(id='regression-dropdown', options=[{'label': technique, 'value': technique} for technique in regression_techniques],
-                     value='Regression 1', clearable=False)
+                     value='Regression 1', clearable=False),
+        dash.dash_table.DataTable()
+
     ], className='four columns'),
 
     # Bottom right section
@@ -90,12 +93,11 @@ def update_commodity_plot(selected_commodity):
     Output('commodity-plot', 'figure'),
     [Input('commodity-dropdown', 'value')]
 )
-def update_commodity_plot(selected_commodity):
-    df = data_load.load_target_data(selected_commodity)
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=df.index, y=df['value'], mode='lines', name=selected_commodity))
-    fig.update_layout(title_text='Time Series Plot', xaxis_title='Date', yaxis_title='Price')
-    return fig
+def update_regression_table(df):
+    y = df[selected_commodity]
+    X = df.drop([selected_commodity], axis = 1)
+    table = ml_methods.fit_linear_regression(y, X)
+    return table
 
 
 if __name__ == '__main__':
