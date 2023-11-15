@@ -10,11 +10,11 @@ from dash.dependencies import Input, Output
 import data_load
 import ml_methods
 
-app = dash.Dash(__name__)
 X = pd.DataFrame()
 y = pd.Series()
 selected_commodity = ""
 result_df = pd.DataFrame()
+app = dash.Dash(__name__)
 macro_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durables', 'Unemployment', 'Nonfarm Payroll']
 commodities = ['Crude Oil WTI', 'Crude Oil Brent', 'Natural Gas', 'Copper', 'Aluminum', 'Wheat', 'Corn', 'Cotton', 'Sugar', 'Coffee', 'CMI']
 regression_techniques = ['Linear Regression', 'Random Forest', 'SVM']
@@ -43,7 +43,7 @@ app.layout = html.Div([
         dcc.Dropdown(id='regression-dropdown', options=[{'label': technique, 'value': technique} for technique in regression_techniques],
                      value='Regression 1', clearable=False),
         dash.dash_table.DataTable(
-            id='table',
+            id='regression-table',
             columns=[{"name": i, "id": i} for i in result_df.columns],
             data=result_df.to_dict('records'),
         )
@@ -96,11 +96,12 @@ def update_commodity_plot(selected_commodity):
 
 
 @app.callback(
-    Output('table', 'data'),
+    Output('regression-table', 'data'),
     [Input('regression-dropdown', 'value')]
 )
 def update_regression_table(selected_regression):
     if selected_regression == 'Linear Regression':
+        print(X)
         return ml_methods.fit_linear_regression(y, X)
     if selected_regression == 'Random Forest':
         return ml_methods.fit_random_forest(y, X)
