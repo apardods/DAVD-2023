@@ -1,8 +1,7 @@
 import pandas as pd
-import dash
-import dash_core_components as dcc
-import dash_html_components as html
 import numpy as np
+import dash
+from dash import dcc, html
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from dash.dependencies import Input, Output
@@ -10,9 +9,8 @@ from dash.dependencies import Input, Output
 import data_load
 import ml_methods
 
-X = pd.DataFrame()
-y = pd.Series()
-selected_commodity = ""
+X = data_load.load_X('Real GDP', 'CPI', 'Unemployment')
+y = data_load.load_target_data('Crude Oil WTI')
 result_df = pd.DataFrame()
 app = dash.Dash(__name__)
 macro_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durables', 'Unemployment', 'Nonfarm Payroll']
@@ -21,27 +19,29 @@ regression_techniques = ['Linear Regression', 'Random Forest', 'SVM']
 
 app.layout = html.Div([
     #topleft
+    dcc.Store(id='X'),
+    dcc.Store(id='y'),
     html.Div([
         dcc.Dropdown(id='macro-var-1', options=[{'label': var, 'value': var} for var in macro_variables],
-                     value='Variable 1', clearable=False),
+                     value='Real GDP', clearable=False),
         dcc.Dropdown(id='macro-var-2', options=[{'label': var, 'value': var} for var in macro_variables],
-                     value='Variable 2', clearable=False),
+                     value='CPI', clearable=False),
         dcc.Dropdown(id='macro-var-3', options=[{'label': var, 'value': var} for var in macro_variables],
-                     value='Variable 3', clearable=False),
+                     value='Unemployment', clearable=False),
         dcc.Graph(id='macroeconomic-plots')
     ], className='four columns'),
 
     #topright
     html.Div([
         dcc.Dropdown(id='commodity-dropdown', options=[{'label': commodity, 'value': commodity} for commodity in commodities],
-                     value='Commodity 1', clearable=False),
+                     value='Crude Oil WTI', clearable=False),
         dcc.Graph(id='commodity-plot')
     ], className='four columns'),
 
     #botleft
     html.Div([
         dcc.Dropdown(id='regression-dropdown', options=[{'label': technique, 'value': technique} for technique in regression_techniques],
-                     value='Regression 1', clearable=False),
+                     value='Linear Regression', clearable=False),
         dash.dash_table.DataTable(
             id='regression-table',
             columns=[{"name": i, "id": i} for i in result_df.columns],
@@ -51,12 +51,15 @@ app.layout = html.Div([
     ], className='four columns'),
 
     #botright
-    html.Div(id='bottom-right-content', className='four columns')
+    html.Div([
+        dcc.Graph(id='residual-plot')
+    ], className='four columns')
 ])
 
-# Define callbacks (you need to implement these callbacks)
+
 @app.callback(
-    Output('macroeconomic-plots', 'figure'),
+    [Output('macroeconomic-plots', 'figure'),
+     Output('X', 'data')],
     [Input('macro-var-1', 'value'),
      Input('macro-var-2', 'value'),
      Input('macro-var-3', 'value')]
@@ -65,41 +68,49 @@ def update_macroeconomic_plots(selected_variable1, selected_variable2, selected_
     df1 = data_load.load_macro_data(selected_variable1)
     df2 = data_load.load_macro_data(selected_variable2)
     df3 = data_load.load_macro_data(selected_variable3)
-
-    X = pd.concat([df1, df2, df3], axis=1)
+    X = pd.concat([df1, df2, df3], axis=1).dropna()
     fig = make_subplots(rows=2, cols=2, subplot_titles=[selected_variable1, selected_variable2, selected_variable3, 'Correlation Heatmap'])
     fig.add_trace(go.Scatter(x=df1.index, y=df1['value'], mode='lines', name=selected_variable1), row=1, col=1)
     fig.add_trace(go.Scatter(x=df2.index, y=df2['value'], mode='lines', name=selected_variable2), row=1, col=2)
     fig.add_trace(go.Scatter(x=df3.index, y=df3['value'], mode='lines', name=selected_variable3), row=2, col=1)
-    correlation_matrix = pd.concat([df1['value'], df2['value'], df3['value']], axis=1).corr()
-    print(correlation_matrix)
-    fig.add_trace(go.Heatmap(z=correlation_matrix.values,
-                             x=correlation_matrix.columns,
-                             y=correlation_matrix.columns,
-                             colorscale='Viridis',
-                             colorbar=dict(title='Correlation'),
+    corr = X.corr()
+    mask = np.triu(np.ones_like(corr, dtype=bool))
+    corr_mask = corr.mask(mask)
+    print(corr_mask)
+    fig.add_trace(go.Heatmap(z=corr_mask,
+                             x=corr_mask.columns.values,
+                             y=corr_mask.columns.values,
+                             colorscale='RdBu',
+                             #colorbar=dict(title='Correlation'),
                              zmin=-1, zmax=1),
                   row=2, col=2)
     fig.update_layout(title_text='Macro Variables Analysis', showlegend=False)
-    return fig
+    return fig, X.to_dict('records')
+
+
 
 @app.callback(
-    Output('commodity-plot', 'figure'),
-    [Input('commodity-dropdown', 'value')]
+    [Output('commodity-plot', 'figure'),
+     Output('y', 'data')],
+    [Input('commodity-dropdown', 'value'),]
 )
 def update_commodity_plot(selected_commodity):
     y = data_load.load_target_data(selected_commodity)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=y.index, y=y['value'], mode='lines', name=selected_commodity))
     fig.update_layout(title_text='Time Series Plot', xaxis_title='Date', yaxis_title='Price')
-    return fig
+    return fig, y.to_dict('records')
 
 
 @app.callback(
     Output('regression-table', 'data'),
-    [Input('regression-dropdown', 'value')]
+    [Input('regression-dropdown', 'value'),
+     Input('X','data'),
+     Input('y', 'data')]
 )
-def update_regression_table(selected_regression):
+def update_regression_table(selected_regression, X, y):
+    if X is None:
+        return None
     if selected_regression == 'Linear Regression':
         print(X)
         return ml_methods.fit_linear_regression(y, X)

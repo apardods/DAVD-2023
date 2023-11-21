@@ -18,8 +18,9 @@ def load_macro_data(value):
     df = pd.DataFrame(data_json['data'])
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values(by='date').set_index('date')
-    df['value'] = pd.to_numeric(df['value'], errors='coerce')
-    return df
+    df_quarterly = df[df.index.month.isin([1, 4, 7, 10])]
+    df_quarterly['value'] = pd.to_numeric(df_quarterly['value'], errors='coerce')
+    return df_quarterly
 
 def load_target_data(value):
     # value_api = value.replace(' ', '_').upper()
@@ -37,5 +38,13 @@ def load_target_data(value):
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values(by='date').set_index('date')
     df_quarterly = df[df.index.month.isin([1, 4, 7, 10])]
-    df_quarterly['value'] = pd.to_numeric(df_quarterly['value'], errors='coerce')
+    series = pd.to_numeric(df_quarterly['value'], errors='coerce')
+    df_quarterly['value'] = series
     return df_quarterly
+
+def load_X(var1, var2, var3):
+    df1 = load_macro_data(var1)
+    df2 = load_macro_data(var2)
+    df3 = load_macro_data(var3)
+    X = pd.concat([df1, df2, df3], axis=1)
+    return X
