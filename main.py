@@ -140,9 +140,14 @@ def update_regression_table(selected_regression, X, y):
 
 @app.callback(
     Output('forecast-plot', 'figure'),
-    [Input('y', 'data')]
+    [Input('y', 'data'),
+     Input('commodity-dropdown', 'value')]
 )
-def update_forecast_plot(y):
+def update_forecast_plot(y, selected_commodity):
+    y = pd.DataFrame(y)
+    y.reset_index(inplace=True)
+    y.rename(columns={'index': 'ds', selected_commodity: 'y'}, inplace=True)
+    y['ds']= pd.to_datetime(y['ds'], dayfirst=True)
     model = Prophet()
     model.fit(y)
     future = model.make_future_dataframe(periods=20, freq='Q')
