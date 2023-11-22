@@ -20,6 +20,7 @@ def load_macro_data(value):
     df = df.sort_values(by='date').set_index('date')
     df_quarterly = df[df.index.month.isin([1, 4, 7, 10])]
     df_quarterly['value'] = pd.to_numeric(df_quarterly['value'], errors='coerce')
+    df_quarterly.rename(columns={'value':value}, inplace=True)
     return df_quarterly
 
 def load_target_data(value):
@@ -40,6 +41,7 @@ def load_target_data(value):
     df_quarterly = df[df.index.month.isin([1, 4, 7, 10])]
     series = pd.to_numeric(df_quarterly['value'], errors='coerce')
     df_quarterly['value'] = series
+    df_quarterly.rename(columns={'value':value}, inplace=True)
     return df_quarterly
 
 def load_X(var1, var2, var3):
