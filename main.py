@@ -23,7 +23,13 @@ app.layout = html.Div([
     html.Div(
         children=[
             html.H1('Commodity Price Stress Testing Tool'),
-            html.P('To make the Stress Testing Models, select the macro and target variables according to your needs. Careful with macro variables that might be too correlated!'),
+            html.P('''To make the models, select the desired macro and target variables. 
+                   You will then see plots for all the selected variables (and the correlations 
+                   for explanatory variables).'''),
+            html.P('''Then select a ML methodology, and you will see a 
+                   conclusion of the model, trained with automatic hyperparameter optimization.'''),
+            html.P('''You will also see a forecast for future values of the commodity price, powered
+                   by Meta's Prophet Engine.'''),
         ],
         style={
             'textAlign': 'center',
@@ -35,40 +41,40 @@ app.layout = html.Div([
     dcc.Store(id='X'),
     dcc.Store(id='y'),
     html.Div([
-        html.H2('Macro Variables Analysis'),
+        html.H2('Macro Variables Analysis', style={'textAlign': 'center'}),
         dcc.Dropdown(id='macro-var-1', options=[{'label': var, 'value': var} for var in macro_variables],
-                    value='Real GDP', clearable=False, style={'width': '200px'}),
+                    value='Real GDP', clearable=False, style={'width': '200px', 'display': 'inline-block'}),
         dcc.Dropdown(id='macro-var-2', options=[{'label': var, 'value': var} for var in macro_variables],
-                    value='CPI', clearable=False, style={'width': '200px'}),
+                    value='CPI', clearable=False, style={'width': '200px', 'display': 'inline-block'}),
         dcc.Dropdown(id='macro-var-3', options=[{'label': var, 'value': var} for var in macro_variables],
-                    value='Unemployment', clearable=False, style={'width': '200px'}),
+                    value='Unemployment', clearable=False, style={'width': '200px', 'display': 'inline-block'}),
         dcc.Graph(id='macroeconomic-plots')
-    ], style={'display': 'inline-block', 'width' : '60%'}),
+    ], style={'display': 'inline-block', 'width' : '60%', 'verticalAlign': 'top'}),
 
     #topright
     html.Div([
-        html.H2('Regression Output Table'),
+        html.H2('Regression Output Table', style={'textAlign': 'center'}),
         dcc.Dropdown(id='commodity-dropdown', options=[{'label': commodity, 'value': commodity} for commodity in commodities],
-                     value='Crude Oil WTI', clearable=False, style = {'width': '50%'}),
+                     value='Natural Gas', clearable=False, style = {'width': '50%'}),
         dcc.Graph(id='commodity-plot')
-    ], style={'display': 'inline-block', 'width': '40%'}),
+    ], style={'display': 'inline-block', 'width': '40%', 'verticalAlign': 'top'}),
 
     #botleft
     html.Div([
-        html.H2('Regression Output Table'),
+        html.H2('Regression Output Table', style={'textAlign': 'center'}),
         dcc.Dropdown(id='regression-dropdown', options=[{'label': technique, 'value': technique} for technique in regression_techniques],
-                     value='SVM', clearable=False),
+                     value='Linear Regression', clearable=False),
         dash.dash_table.DataTable(
             id='regression-table'
         )
 
-    ], style={'display': 'inline-block', 'width': '30%'}),
+    ], style={'display': 'inline-block', 'width': '30%', 'verticalAlign': 'top'}),
 
     #botright
     html.Div([
-        html.H2('Forecast'),
+        html.H2('Forecast Commodity Price W/ Prophet', style={'textAlign': 'center'}),
         dcc.Graph(id='forecast-plot')
-    ], style={'display': 'inline-block', 'width': '70%'})
+    ], style={'display': 'inline-block', 'width': '70%', 'verticalAlign': 'top'})
     ])
 ])
 
@@ -92,7 +98,6 @@ def update_macroeconomic_plots(selected_variable1, selected_variable2, selected_
     corr = X.corr()
     mask = np.triu(np.ones_like(corr, dtype=bool))
     corr_mask = corr.mask(mask)
-    print(corr_mask)
     fig.add_trace(go.Heatmap(z=corr_mask,
                              x=corr_mask.columns.values,
                              y=corr_mask.columns.values,
@@ -145,20 +150,22 @@ def update_regression_table(selected_regression, X, y):
 )
 def update_forecast_plot(y, selected_commodity):
     y = pd.DataFrame(y)
+    latest_quarter = pd.to_datetime('today').to_period('Q').end_time
     y.reset_index(inplace=True)
-    y.rename(columns={'index': 'ds', selected_commodity: 'y'}, inplace=True)
-    y['ds']= pd.to_datetime(y['ds'], dayfirst=True)
+    y['ds'] = pd.date_range(end=latest_quarter, periods=len(y), freq='Q')
+    y.rename(columns={ selected_commodity: 'y'}, inplace=True)
+    y.drop(['index'], inplace=True, axis=1)
     model = Prophet()
     model.fit(y)
-    future = model.make_future_dataframe(periods=20, freq='Q')
+    periods = len(y)//5
+    future = model.make_future_dataframe(periods=periods, freq='Q')
     forecast = model.predict(future)
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=y['ds'], y=y['y'], mode='lines', name='Actual'))
-    fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], mode='lines', name='Forecast'))
-    fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat_upper'], fill=None, mode='lines', line_color='rgba(0,100,80,0.2)', name='Upper Bound'))
-    fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat_lower'], fill='tonexty', mode='lines', line_color='rgba(0,100,80,0.2)', name='Lower Bound'))
-    fig.update_layout(title='Prophet Forecast',
-                      xaxis_title='Date',
+    fig.add_trace(go.Scatter(x=forecast['ds'][len(y)-1:], y=forecast['yhat'][len(y)-1:], mode='lines', name='Forecast'))
+    fig.add_trace(go.Scatter(x=forecast['ds'][len(y)-1:], y=forecast['yhat_upper'][len(y)-1:], fill=None, mode='lines', line_color='rgba(0,100,80,0.2)', name='Upper Bound'))
+    fig.add_trace(go.Scatter(x=forecast['ds'][len(y)-1:], y=forecast['yhat_lower'][len(y)-1:], fill='tonexty', mode='lines', line_color='rgba(0,100,80,0.2)', name='Lower Bound'))
+    fig.update_layout(xaxis_title='Date',
                       yaxis_title='Value')
     return fig
 
