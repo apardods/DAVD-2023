@@ -12,7 +12,7 @@ import data_load
 import ml_methods
 
 X = data_load.load_X('Real GDP', 'CPI', 'Unemployment')
-y = data_load.load_target_data('Crude Oil WTI')
+y = data_load.load_target_data('Natural Gas')
 result_df = pd.DataFrame()
 app = dash.Dash(__name__)
 macro_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durables', 'Unemployment', 'Nonfarm Payroll']

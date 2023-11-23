@@ -30,6 +30,7 @@ def load_target_data(value):
     url = f'https://www.alphavantage.co/query?function={value_api}&interval=monthly&apikey={API_KEY}'
     r = requests.get(url)
     data = r.json()
+    print(data)
     df = pd.DataFrame(data['data'])
     df['date'] = pd.to_datetime(df['date'])
     df = df.sort_values(by='date').set_index('date')
