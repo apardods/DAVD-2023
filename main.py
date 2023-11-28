@@ -15,8 +15,8 @@ X = data_load.load_X('Real GDP', 'CPI', 'Unemployment')
 y = data_load.load_target_data('Natural Gas')
 result_df = pd.DataFrame()
 app = dash.Dash(__name__)
-macro_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durables', 'Unemployment', 'Nonfarm Payroll']
-commodities = ['Crude Oil WTI', 'Crude Oil Brent', 'Natural Gas', 'Copper', 'Aluminum', 'Wheat', 'Corn', 'Cotton', 'Sugar', 'Coffee', 'CMI']
+macro_variables = ['Real GDP', 'Real GDP per capita', 'Treasury Yield', 'Federal Funds Rate', 'CPI', 'Inflation', 'Retail Sales', 'Durable Goods Orders', 'Unemployment', 'Nonfarm Payroll']
+commodities = ['Crude Oil WTI', 'Crude Oil Brent', 'Natural Gas', 'Copper', 'Aluminum', 'Wheat', 'Corn', 'Cotton', 'Sugar', 'Coffee', 'All Commodities']
 regression_techniques = ['Linear Regression', 'Random Forest', 'SVM']
 
 app.layout = html.Div([
