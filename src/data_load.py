@@ -15,7 +15,7 @@ def load_macro_data(value):
     # df_quarterly = df[df.index.month.isin([1, 4, 7, 10])]
     # df_quarterly['value'] = pd.to_numeric(df_quarterly['value'], errors='coerce')
     # df_quarterly.rename(columns={'value':value}, inplace=True)
-    with open(f'..\\resources\\macro\\{value_api}.json') as json_file:
+    with open(f'resources\\macro\\{value_api}.json') as json_file:
         data_json = json.load(json_file)
     df = pd.DataFrame(data_json['data'])
     df['date'] = pd.to_datetime(df['date'])
@@ -40,7 +40,7 @@ def load_target_data(value):
     # series = pd.to_numeric(df_quarterly['value'], errors='coerce')
     # df_quarterly['value'] = series
     # df_quarterly.rename(columns={'value':value}, inplace=True)
-    with open(f'..\\resources\\comm\\{value_api}.json') as json_file:
+    with open(f'resources\\comm\\{value_api}.json') as json_file:
         data_json = json.load(json_file)
     df = pd.DataFrame(data_json['data'])
     df['date'] = pd.to_datetime(df['date'])
