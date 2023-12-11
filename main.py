@@ -53,7 +53,7 @@ app.layout = html.Div([
 
     #topright
     html.Div([
-        html.H2('Regression Output Table', style={'textAlign': 'center'}),
+        html.H2('Commodity Variable Plot', style={'textAlign': 'center'}),
         dcc.Dropdown(id='commodity-dropdown', options=[{'label': commodity, 'value': commodity} for commodity in commodities],
                      value='Natural Gas', clearable=False, style = {'width': '50%'}),
         dcc.Graph(id='commodity-plot')
